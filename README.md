@@ -14,3 +14,5 @@ https://github.com/rxi/json.lua
 https://vkguide.dev/
 
 http://lua-users.org/wiki/ModulesTutorial
+
+https://github.com/Tangent128/luasdl2
