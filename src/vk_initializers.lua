@@ -1,25 +1,25 @@
+--Tidal by Sebastien MacDougall-Landry
+--This software is licensed under the LGPLv3
+--See COPYING and COPYING.LESSER for more details
+
 local vk = require("moonvulkan")
 local SDL = require "SDL"
 
 local vk_initializers = {}
 
-function vk_initializers.createInstance()
-	local applicationInfo = vk.applicationinfo {
+function vk_initializers.createInstance(window)
+	local applicationInfo = {
 		application_name = "Hello Triangle",
 		application_version = vk.make_version(1, 0, 0),
 		engine_name = "No Engine",
 		engine_version = vk.make_version(1, 0, 0),
 		api_version = vk.API_VERSION_1_0
 	}
-	local extensionNames = {}
-	for extensionProperty in vk.enumerate_instance_extension_properties() do
-		table.insert(extensionNames, extensionProperty.extension_name)
-	end
-	local createInfo = vk.instancecreateinfo {
+	local createInfo = {
 		--flags = --instancecreateflags
 		application_info = applicationInfo
 		--enabled_layer_names = ""
-		enabled_extension_names = extensionNames
+		--enabled_extension_names = SDL.vulkanGetInstanceExtensions(window)
 		--disabled_validation_checks = --validationcheck
 		--enabled_validation_features = --validationfeatureenable
 		--disabled_validation_features = --validationfeaturedisable
@@ -46,7 +46,7 @@ local function isDeviceSuitable(device)
 	return false
 end
 
-function vk_initalizers.pickPhysicalDevice(instance)
+function vk_initializers.pickPhysicalDevice(instance)
 	local physicalDevice = nil
 	for device in vk.enumerate_physical_devices(instance) do
 		if isDeviceSuitable(device) then
@@ -61,7 +61,7 @@ function vk_initalizers.pickPhysicalDevice(instance)
 end
 
 function vk_initializers.createLogicalDevice(device)
-	local queueCreateInfo = vk.devicequeuecreateinfo {
+	local queueCreateInfo = {
 		--flags = --devicequeuecreateflags,
 		queue_family_index = findQueueFamilies(device),
 		queue_priorities = { 1.0 }
@@ -69,7 +69,7 @@ function vk_initializers.createLogicalDevice(device)
 	}
 	local deviceFeatures = {
 	}
-	local createInfo = vk.devicecreateinfo {
+	local createInfo = {
 		--flags = --devicecreateflags,
 		queue_create_infos = { queueCreateInfo },
 		--enabled_extension_names = { "" },
@@ -80,7 +80,7 @@ function vk_initializers.createLogicalDevice(device)
 end
 
 function vk_initializers.createSurface(window, instance)
-	--
+	return SDL.vulkanCreateSurface(window, instance)
 end
 
 return vk_initializers

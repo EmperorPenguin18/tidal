@@ -1,0 +1,11 @@
+{
+	"name": "example",
+	"layer": 0,
+	"events": {
+		"creation": {
+			"spawn": {
+				"object": "example2"
+			}
+		}
+	}
+}

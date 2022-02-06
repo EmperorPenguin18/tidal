@@ -1,3 +1,7 @@
+--Tidal by Sebastien MacDougall-Landry
+--This software is licensed under the LGPLv3
+--See COPYING and COPYING.LESSER for more details
+
 -- setup
 local vk = require("moonvulkan")
 local SDL = require "SDL"
@@ -30,7 +34,7 @@ local function vk_check(x)
 end
 
 local function init_vulkan()
-	_instance, err = vk_initializers.createInstance()
+	_instance, err = vk_initializers.createInstance(_window)
 	if not _instance then
 		vk_check(err)
 	end
@@ -77,6 +81,7 @@ function vk_engine.init()
 end
 
 function vk_engine.cleanup()
+	vk.destroy_surface(_surface)
 	vk.destroy_instance(_instance)
 	vk.destroy_device(_device)
 end
