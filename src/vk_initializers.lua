@@ -17,9 +17,9 @@ function vk_initializers.createInstance(window)
 	}
 	local createInfo = {
 		--flags = --instancecreateflags
-		application_info = applicationInfo
+		application_info = applicationInfo,
 		--enabled_layer_names = ""
-		--enabled_extension_names = SDL.vulkanGetInstanceExtensions(window)
+		enabled_extension_names = SDL.vulkanGetInstanceExtensions(window)
 		--disabled_validation_checks = --validationcheck
 		--enabled_validation_features = --validationfeatureenable
 		--disabled_validation_features = --validationfeaturedisable
@@ -29,7 +29,9 @@ end
 
 local function findQueueFamilies(device)
 	local i = 0
-	for queueFamilyProperty in vk.get_physical_device_queue_family_properties(device) do
+	local properties = vk.get_physical_device_queue_family_properties(device)
+	while i+1 < #properties do
+		local queueFamilyProperty = properties[i+1]
 		if (queueFamilyProperty.queue_flags == vk.QUEUE_GRAPHICS_BIT) then
 			break
 		end
@@ -48,7 +50,9 @@ end
 
 function vk_initializers.pickPhysicalDevice(instance)
 	local physicalDevice = nil
-	for device in vk.enumerate_physical_devices(instance) do
+	local devices = vk.enumerate_physical_devices(instance)
+	for i = 1, #devices do
+		local device = devices[i]
 		if isDeviceSuitable(device) then
 			physicalDevice = device
 			break
@@ -80,7 +84,7 @@ function vk_initializers.createLogicalDevice(device)
 end
 
 function vk_initializers.createSurface(window, instance)
-	return SDL.vulkanCreateSurface(window, instance)
+	return vk.created_surface(instance, SDL.vulkanCreateSurface(window, instance:raw()))
 end
 
 return vk_initializers

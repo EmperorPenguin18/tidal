@@ -5,7 +5,9 @@
 -- setup
 local vk = require("moonvulkan")
 local SDL = require "SDL"
+local lfs = require "lfs"
 local vk_initializers = require "vk_initializers"
+local files = require "files"
 
 local vk_engine = {}
 
@@ -26,10 +28,24 @@ _swapchainImageFormat = nil
 _swapchainImages = {}
 _swapchainImageViews = {}
 
+objects = {}
+
 -- functions
 local function vk_check(x)
 	if x == vk.ERROR_success then
 		print("Detected Vulkan error: ", x)
+	end
+end
+
+local function init_objects(path)
+	for file in lfs.dir(path) do
+		print(file) --debug
+		--files.read_svg()
+		--vk_image_convert()
+		--files.read_mp3()
+		--files.read_lua()
+		files.read_json()
+		--init_objects()
 	end
 end
 
@@ -39,7 +55,7 @@ local function init_vulkan()
 		vk_check(err)
 	end
 	--_debug_messenger = 
-	_surface, err = vk_initializers.createSurface()
+	_surface, err = vk_initializers.createSurface(_window, _instance)
 	if not _surface then
 		vk_check(err)
 	end
@@ -57,7 +73,14 @@ local function init_swapchain()
 	--
 end
 
-function vk_engine.init()
+function vk_engine.init(arg)
+
+	if not arg[1] then
+		print("Tidal requires a directory that contains game files to be the first cmd line argument")
+		os.exit(1)
+	end
+	--init_objects(arg[1])
+	
 	local ret, err = SDL.init { SDL.flags.Video }
 	if not ret then
 		error(err)
