@@ -22,6 +22,7 @@ _debug_messenger = nil
 _chosenGPU = nil
 _device = nil
 _surface = nil
+_queue = nil
 
 _swapchain = nil
 _swapchainImageFormat = nil
@@ -31,18 +32,12 @@ _swapchainImageViews = {}
 objects = {}
 
 -- functions
-local function vk_check(x)
-	if x == vk.ERROR_success then
-		print("Detected Vulkan error: ", x)
-	end
-end
-
 local function init_objects(path)
 	for file in lfs.dir(path) do
 		print(file) --debug
 		--files.read_svg()
 		--vk_image_convert()
-		--files.read_mp3()
+		--files.read_wav()
 		--files.read_lua()
 		files.read_json()
 		--init_objects()
@@ -57,20 +52,38 @@ local function init_vulkan()
 	--_debug_messenger = 
 	_surface, err = vk_initializers.createSurface(_window, _instance)
 	if not _surface then
-		vk_check(err)
+		error(err)
 	end
-	_chosenGPU, err = vk_initializers.pickPhysicalDevice(_instance)
+	_chosenGPU, err = vk_initializers.pickPhysicalDevice(_instance, _surface)
 	if not _chosenGPU then
-		vk_check(err)
+		error(err)
 	end
-	_device, err = vk_initializers.createLogicalDevice(_chosenGPU)
+	_device, err = vk_initializers.createLogicalDevice(_chosenGPU, _surface)
 	if not _device then
-		vk_check(err)
+		error(err)
+	end
+	_queue, err = vk_initializers.createQueue(_chosenGPU, _surface)
+	if not _queue then
+		error(err)
 	end
 end
 
 local function init_swapchain()
-	--
+	local capabilities = vk.get_physical_device_surface_capabilities(_chosenGPU, _surface)
+	if not capabilities then
+		error(err)
+	end
+	local formats = vk.get_physical_device_surface_formats(_chosenGPU, _surface)
+	if not next(formats) then
+		error(err)
+	end
+	local presentmodes = vk.get_physical_device_surface_present_modes(_chosenGPU, _surface)
+	if not next(presentmodes) then
+		error(err)
+	end
+	_swapchain, _swapchainImageFormat = vk_initializers.createSwapChain(capabilities, formats, presentmodes, _window, _device)
+	_swapchainImages = vk.get_swapchain_images(_swapchain)
+	_swapchainImageViews = vk_initializers.createImageViews(_swapchainImages, _swapchainImageFormat)
 end
 
 function vk_engine.init(arg)
@@ -104,6 +117,10 @@ function vk_engine.init(arg)
 end
 
 function vk_engine.cleanup()
+	for i = 1,#_swapchainImageViews do
+		vk.destroy_image_view(_swapchainImageViews[i])
+	end
+	vk.destroy_swapchain(_swapchain)
 	vk.destroy_surface(_surface)
 	vk.destroy_instance(_instance)
 	vk.destroy_device(_device)

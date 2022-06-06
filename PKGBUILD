@@ -8,7 +8,8 @@ url='https://github.com/EmperorPenguin18/tidal/'
 source=("https://github.com/EmperorPenguin18/tidal/archive/$pkgver.tar.gz")
 arch=('x86_64')
 license=('LGPL3')
-depends=('moonvulkan' 'lua-sdl2')
+depends=('moonvulkan' 'lua-sdl2-git')
+optdepends=('inkscape: improved vector graphics')
 sha256sums=('')
 
 build () {
