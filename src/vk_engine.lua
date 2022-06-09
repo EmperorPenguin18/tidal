@@ -26,6 +26,7 @@ _queue = nil
 
 _swapchain = nil
 _swapchainImageFormat = nil
+_swapchainExtent = nil
 _swapchainImages = {}
 _swapchainImageViews = {}
 
@@ -47,9 +48,14 @@ end
 local function init_vulkan()
 	_instance, err = vk_initializers.createInstance(_window)
 	if not _instance then
-		vk_check(err)
+		error(err)
 	end
-	--_debug_messenger = 
+	if enableValidationLayers then
+		_debug_messenger = vk_initializers.setupDebugMessenger(_instance)
+		if not _debug_messenger then
+			error(err)
+		end
+	end
 	_surface, err = vk_initializers.createSurface(_window, _instance)
 	if not _surface then
 		error(err)
@@ -62,28 +68,18 @@ local function init_vulkan()
 	if not _device then
 		error(err)
 	end
-	_queue, err = vk_initializers.createQueue(_chosenGPU, _surface)
+	_queue, err = vk_initializers.createQueue(_chosenGPU, _surface, _device)
 	if not _queue then
 		error(err)
 	end
-end
-
-local function init_swapchain()
-	local capabilities = vk.get_physical_device_surface_capabilities(_chosenGPU, _surface)
-	if not capabilities then
+	_swapchain, _swapchainImageFormat, _swapchainExtent, _swapchainImages = vk_initializers.createSwapChain(_window, _surface, _chosenGPU, _device)
+	if not _swapchain then
 		error(err)
 	end
-	local formats = vk.get_physical_device_surface_formats(_chosenGPU, _surface)
-	if not next(formats) then
-		error(err)
-	end
-	local presentmodes = vk.get_physical_device_surface_present_modes(_chosenGPU, _surface)
-	if not next(presentmodes) then
-		error(err)
-	end
-	_swapchain, _swapchainImageFormat = vk_initializers.createSwapChain(capabilities, formats, presentmodes, _window, _device)
-	_swapchainImages = vk.get_swapchain_images(_swapchain)
 	_swapchainImageViews = vk_initializers.createImageViews(_swapchainImages, _swapchainImageFormat)
+	if not _swapchainImageViews then
+		error(err)
+	end
 end
 
 function vk_engine.init(arg)
@@ -111,8 +107,6 @@ function vk_engine.init(arg)
 
 	init_vulkan()
 
-	init_swapchain()
-
 	_isInitialized = true
 end
 
@@ -121,9 +115,13 @@ function vk_engine.cleanup()
 		vk.destroy_image_view(_swapchainImageViews[i])
 	end
 	vk.destroy_swapchain(_swapchain)
+	vk.destroy_device(_device)
+	if enableValidationLayers then
+		vk.destroy_debug_utils_messenger(_debug_messenger)
+	end
 	vk.destroy_surface(_surface)
 	vk.destroy_instance(_instance)
-	vk.destroy_device(_device)
+	SDL.quit()
 end
 
 local function draw()
