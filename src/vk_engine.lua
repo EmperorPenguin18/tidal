@@ -30,6 +30,10 @@ _swapchainExtent = nil
 _swapchainImages = {}
 _swapchainImageViews = {}
 
+_pipelineLayout = nil
+_renderPass = nil
+_graphicsPipeline = nil
+
 objects = {}
 
 -- functions
@@ -72,12 +76,20 @@ local function init_vulkan()
 	if not _queue then
 		error(err)
 	end
-	_swapchain, _swapchainImageFormat, _swapchainExtent, _swapchainImages = vk_initializers.createSwapChain(_window, _surface, _chosenGPU, _device)
+	_swapchain, _swapchainImageFormat, _swapchainExtent, _swapchainImages, err = vk_initializers.createSwapChain(_window, _surface, _chosenGPU, _device)
 	if not _swapchain then
 		error(err)
 	end
-	_swapchainImageViews = vk_initializers.createImageViews(_swapchainImages, _swapchainImageFormat)
+	_swapchainImageViews, err = vk_initializers.createImageViews(_swapchainImages, _swapchainImageFormat)
 	if not _swapchainImageViews then
+		error(err)
+	end
+	_renderPass, err = vk_initializers.createRenderPass(_device, _swapchainImageFormat)
+	if not _renderPass then
+		error(err)
+	end
+	_graphicsPipeline, _pipelineLayout, err = vk_initializers.createGraphicsPipeline(_device, _swapchainExtent, _renderPass)
+	if not _graphicsPipeline then
 		error(err)
 	end
 end
@@ -111,6 +123,9 @@ function vk_engine.init(arg)
 end
 
 function vk_engine.cleanup()
+	vk.destroy_pipeline(_graphicsPipeline)
+	vk.destroy_pipeline_layout(_pipelineLayout)
+	vk.destroy_render_pass(_renderPass)
 	for i = 1,#_swapchainImageViews do
 		vk.destroy_image_view(_swapchainImageViews[i])
 	end

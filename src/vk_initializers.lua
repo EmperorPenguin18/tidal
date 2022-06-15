@@ -272,4 +272,192 @@ function vk_initializers.createImageViews(swapchainImages, swapchainImageFormat)
 	return output
 end
 
+function vk_initializers.createRenderPass(device, swapchainImageFormat)
+	local colorAttachment = {
+		--flags = --attachmentdescriptionflags,
+		format = swapchainImageFormat,
+		samples = vk.SAMPLE_COUNT_1_BIT,
+		load_op = vk.ATTACHMENT_LOAD_OP_CLEAR,
+		store_op = vk.ATTACHMENT_STORE_OP_STORE,
+		stencil_load_op = vk.ATTACHMENT_LOAD_OP_DONT_CARE,
+		stencil_store_op = vk.ATTACHMENT_STORE_OP_DONT_CARE,
+		initial_layout = vk.IMAGE_LAYOUT_UNDEFINED,
+		final_layout = vk.IMAGE_LAYOUT_PRESENT_SRC
+		--stencil_initial_layout = --imagelayout,
+		--stencil_final_layout = --imagelayout
+	}
+	local colorAttachmentRef = {
+		attachment = 0,
+		layout = vk.IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		--aspect_mask = --imageaspectflags,
+		--stencil_layout = --imagelayout
+	}
+	local subpass = {
+		--flags = --subpassdescriptionflags,
+		pipeline_bind_point = vk.PIPELINE_BIND_POINT_GRAPHICS,
+		--input_attachments = --{attachmentreference},
+		color_attachments = { colorAttachmentRef }
+		--resolve_attachments = --{attachmentreference},
+		--depth_stencil_attachments = --attachmentreference,
+		--preserve_attachments = {integer},
+		--view_mask = {integer},
+		--depth_resolve_mode = --resolvemodeflags,
+		--stencil_resolve_mode = --resolvemodeflags,
+		--depth_stencil_resolve_attachment = --attachmentreference,
+		--fragment_shading_rate_attachment = attachmentreference,
+		--shading_rate_attachment_texel_size = --extent2d
+	}
+	local renderPassInfo = {
+		--flags = --renderpasscreateflags,
+		subpasses = { subpass },
+		attachments = { colorAttachment }
+		--dependencies = --{subpassdependency},
+		--correlated_view_masks = {integer},
+		--fragment_density_map_attachment = --attachmentreference
+	}
+	return vk.create_render_pass(device, renderPassInfo)
+end
+
+local function createShaderModule(device, fname)
+	local f = assert(io.open(fname, "rb"))
+	local createInfo = {
+		--flags = --shadermodulecreateflags,
+		code = f:read("*all")
+		--validation_cache = --validation_cache
+	}
+	f:close()
+	return vk.create_shader_module(device, createInfo)
+end
+
+function vk_initializers.createGraphicsPipeline(device, swapChainExtent, renderPass)
+	local vertShaderModule = createShaderModule(device, "vert.spv")
+	local fragShaderModule = createShaderModule(device, "frag.spv")
+	local vertShaderStageInfo = {
+		--flags = --pipelineshaderstagecreateflags,
+		stage = vk.SHADER_STAGE_VERTEX_BIT,
+		module = vertShaderModule,
+		name = "main"
+		--specialization_info = --specializationinfo,
+		--required_subgroup_size = integer
+	}
+	local fragShaderStageInfo = {
+		stage = vk.SHADER_STAGE_FRAGMENT_BIT,
+		module = fragShaderModule,
+		name = "main"
+	}
+	local shaderStages = { vertShaderStageInfo, fragShaderStageInfo }
+	local vertexInputInfo = {
+		--flags = --pipelinevertexinputstatecreateflags,
+		--vertex_binding_descriptions = --{vertexinputbindingdescription},
+		--vertex_attribute_descriptions = --{vertexinputattributedescription},
+		--vertex_binding_divisors = --{vertexinputbindingdivisordescription}
+	}
+	local inputAssembly = {
+		--flags = --pipelineinputassemblystatecreateflags,
+		topology = vk.PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		primitive_restart_enable = false
+	}
+	local viewport = vk.viewport(0, 0, swapChainExtent.width, swapChainExtent.height, 0, 1)
+	local scissors = {
+		offset = vk.offset2d(0, 0),
+		extent = swapChainExtent
+	}
+	local viewportState = {
+		--flags = --pipelineviewportstatecreateflags,
+		viewports = { viewport },
+		scissors = { scissors },
+		viewport_count = 1,
+		scissor_count = 1
+	}
+	local rasterizer = {
+		--flags = --pipelinerasterizationstatecreateflags,
+		depth_clamp_enable = false,
+		rasterizer_discard_enable = false,
+		polygon_mode = vk.POLYGON_MODE_FILL,
+		cull_mode = vk.CULL_MODE_BACK_BIT,
+		front_face = vk.FRONT_FACE_CLOCKWISE,
+		depth_bias_enable = false,
+		depth_bias_constant_factor = 0,
+		depth_bias_clamp = 0,
+		depth_bias_slope_factor = 0,
+		line_width = 1
+		--conservative_rasterization_create_flags = --pipelinerasterizationconservativestatecreateflags,
+		--conservative_rasterization_mode = --conservativerasterizationmode,
+		--extra_primitive_overestimation_size = float,
+		--rasterization_stream_create_flags = --pipelinerasterizationstatestreamcreateflags,
+		--rasterization_stream = integer,
+		--depth_clip_create_flags = --pipelinerasterizationdepthclipstatecreateflags,
+		--depth_clip_enable = boolean,
+		--provoking_vertex_mode = --provokingvertexmode,
+		--line_rasterization_mode = --linerasterizationmode,
+		--stippled_line_enable = boolean,
+		--line_stipple_factor = integer,
+		--line_stipple_pattern = integer
+	}
+	local multisampling = {
+		--flags = --pipelinemultisamplestatecreateflags,
+		rasterization_samples = vk.SAMPLE_COUNT_1_BIT,
+		sample_shading_enable = false,
+		min_sample_shading = 1,
+		alpha_to_coverage_enable = false,
+		alpha_to_one_enable = false
+		--sample_mask = {integer},
+		--sample_locations_enable = boolean,
+		--sample_locations_info = --samplelocationsinfo
+	}
+	local colorBlendAttachment = {
+		blend_enable = false,
+		src_color_blend_factor = vk.BLEND_FACTOR_ONE,
+		dst_color_blend_factor = vk.BLEND_FACTOR_ZERO,
+		color_blend_op = vk.BLEND_OP_ADD,
+		src_alpha_blend_factor = vk.BLEND_FACTOR_ONE,
+		dst_alpha_blend_factor = vk.BLEND_FACTOR_ZERO,
+		alpha_blend_op = vk.BLEND_OP_ADD,
+		color_write_mask = vk.COLOR_COMPONENT_R_BIT | vk.COLOR_COMPONENT_G_BIT | vk.COLOR_COMPONENT_B_BIT | vk.COLOR_COMPONENT_A_BIT
+	}
+	local colorBlending = {
+		--flags = --pipelinecolorblendstatecreateflags,
+		logic_op_enable = false,
+		logic_op = vk.LOGIC_OP_COPY,
+		attachments = { colorBlendAttachment },
+		blend_constants = {0, 0, 0, 0},
+		--src_premultiplied = boolean,
+		--dst_premultiplied = boolean,
+		--blend_overlap = --blendoverlap,
+		--color_write_enables = {boolean}
+	}
+	local pipelineLayoutInfo = {
+		--flags = --pipelinelayoutcreateflags,
+		--set_layouts = --{descriptor_set_layout},
+		--push_constant_ranges = --{pushconstantrange}
+	}
+	local pipelineLayout = vk.create_pipeline_layout(device, pipelineLayoutInfo)
+	local pipelineInfo = {
+		--flags = --pipelinecreateflags,
+		stages = shaderStages,
+		vertex_input_state = vertexInputInfo,
+		input_assembly_state = inputAssembly,
+		--tessellation_state = --pipelinetessellationstatecreateinfo,
+		viewport_state = viewportState,
+		rasterization_state = rasterizer,
+		multisample_state = multisampling,
+		--depth_stencil_state = --pipelinedepthstencilstatecreateinfo,
+		color_blend_state = colorBlending,
+		--dynamic_state = --pipelinedynamicstatecreateinfo,
+		layout = pipelineLayout,
+		render_pass = renderPass,
+		subpass = 0,
+		--base_pipeline_handle = --pipeline,
+		base_pipeline_index = -1
+		--discard_rectangle_state = --pipelinediscardrectanglestatecreateinfo,
+		--creation_feedback_state = --pipelinecreationfeedbackcreateinfo,
+		--fragment_shading_rate_state = --pipelinefragmentshadingratestatecreateinfo,
+		--rendering_state = pipelinerenderingcreateinfo
+	}
+	local graphicspipeline = vk.create_graphics_pipelines(device, nil, { pipelineInfo })
+	vk.destroy_shader_module(fragShaderModule)
+	vk.destroy_shader_module(vertShaderModule)
+	return graphicspipeline[1], pipelineLayout
+end
+
 return vk_initializers
