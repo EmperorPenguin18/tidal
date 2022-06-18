@@ -1,6 +1,6 @@
 --Tidal by Sebastien MacDougall-Landry
 --This software is licensed under the LGPLv3
---See COPYING and COPYING.LESSER for more details
+--See LICENSE for more details
 
 local json = require "json"
 
